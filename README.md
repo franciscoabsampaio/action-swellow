@@ -1,6 +1,6 @@
 # Run Swellow CLI GitHub Action
 
-[![CI](https://github.com/franciscoabsampaio/action-swellow/actions/workflows/ci.yml/badge.svg)](https://github.com/franciscoabsampaio/action-swellow/actions/workflows/ci.yml)
+[![CI](https://github.com/franciscoabsampaio/action-swellow/actions/workflows/ci.yaml/badge.svg)](https://github.com/franciscoabsampaio/action-swellow/actions/workflows/ci.yaml)
 [![GitHub release](https://img.shields.io/github/v/release/franciscoabsampaio/action-swellow)](https://github.com/franciscoabsampaio/action-swellow/releases/latest)
 [![License](https://img.shields.io/github/license/franciscoabsampaio/action-swellow)](./LICENSE)
 
