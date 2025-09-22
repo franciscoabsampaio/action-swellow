@@ -1,0 +1,107 @@
+name: "Run Swellow CLI"
+description: "Run the Swellow CLI seamlessly in your GitHub Actions workflow."
+author: "Francisco A. B. Sampaio"
+
+inputs:
+  command:
+    description: "Swellow command to execute (e.g., up, down)"
+    required: true
+    default: "up"
+  connection-string:
+    description: "Database connection string"
+    required: true
+    default: ""
+  migrations-directory:
+    description: "Directory containing migration files"
+    required: false
+    default: "./migrations"
+  args:
+    description: "Additional arguments to pass to the Swellow command"
+    required: false
+    default: ""
+  version:
+    description: "Version of the binary to download (GitHub release tag)."
+    required: true
+    default: "latest"
+  verbose:
+    description: "Enable verbose output."
+    required: false
+    default: "false"
+runs:
+  using: "composite"
+  steps:
+    - name: Resolve release version
+      id: resolve_version
+      shell: bash
+      run: |
+        set -euo pipefail
+        repo="franciscoabsampaio/swellow"
+        if [ "${{ inputs.version }}" = "latest" ]; then
+          resolved=$(curl -sI https://github.com/${repo}/releases/latest \
+            | grep -i location: \
+            | sed -E 's/.*tag\/([^ ]+).*/\1/')
+          echo "version=$resolved" >> $GITHUB_OUTPUT
+        else
+          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Determine platform
+      id: platform
+      shell: bash
+      run: |
+        case "${{ runner.os }}" in
+          Linux)
+            target="x86_64-unknown-linux-gnu"
+            ext="tar.gz"
+            ;;
+          macOS)
+            target="aarch64-apple-darwin"
+            ext="tar.gz"
+            ;;
+          Windows)
+            target="x86_64-pc-windows-msvc"
+            ext="zip"
+            ;;
+          *)
+            echo "Unsupported OS: ${{ runner.os }}"
+            exit 1
+            ;;
+        esac
+        echo "target=$target" >> $GITHUB_OUTPUT
+        echo "ext=$ext" >> $GITHUB_OUTPUT
+
+    - name: Download release asset
+      shell: bash
+      run: |
+        set -euo pipefail
+        version="${{ steps.resolve_version.outputs.version }}"
+        target="${{ steps.platform.outputs.target }}"
+        ext="${{ steps.platform.outputs.ext }}"
+        repo="franciscoabsampaio/swellow"
+
+        asset="swellow-${version}-${target}.${ext}"
+        url="https://github.com/${repo}/releases/download/${version}/${asset}"
+
+        echo "Downloading $url"
+        curl -L "$url" -o "swellow.${ext}"
+
+    - name: Extract binary
+      shell: bash
+      run: |
+        ext="${{ steps.platform.outputs.ext }}"
+        if [ "$ext" = "zip" ]; then
+          unzip -o swellow.zip
+        else
+          tar -xzf swellow.tar.gz
+        fi
+
+        chmod +x swellow* || true
+
+    - name: Run binary
+      shell: bash
+      run: |
+        ./swellow \
+          --db ${{ inputs.connection-string }} \
+          --dir ${{ inputs.migrations-directory }} \
+          $([[ "${{ inputs.verbose }}" == "true" ]] && echo "-v" || echo "") \
+          ${{ inputs.command }}
