@@ -1,8 +1,10 @@
 name: "Run Swellow CLI"
 description: "Run the Swellow CLI seamlessly in your GitHub Actions workflow."
-icon: database
-
 author: "Francisco A. B. Sampaio"
+
+branding:
+  icon: "database"
+  color: "blue"
 
 inputs:
   command:
