@@ -21,16 +21,29 @@ jobs:
             echo "ERROR: VERSION file is missing!"
             exit 1
           fi
-          ver=$(cat VERSION)
-          echo "version=$ver" >> $GITHUB_OUTPUT
+          
+          version=v$(cat VERSION)
+          moving_tag="$(echo "$version" | cut -d. -f1)"
+
+          echo "Version: $version"
+          echo "Moving tag: $moving_tag"
+
+          # Export to GitHub Actions output
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "moving_tag=$moving_tag" >> $GITHUB_OUTPUT
 
       - name: Create Git tag
         id: tag
         run: |
+          version="${{ steps.version.outputs.version }}"
+          moving_tag="${{ steps.version.outputs.moving_tag }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
-          git push origin "v${{ steps.version.outputs.version }}"
+          git tag -a "$version" -m "Release $version"
+          git push origin "$version"
+          # Update moving tag
+          git tag -f "$moving_tag"
+          git push origin "$moving_tag" --force
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
