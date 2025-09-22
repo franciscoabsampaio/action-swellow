@@ -1,0 +1,19 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test-action:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Swellow Action (help command)
+        uses: ./. # use the action defined in this repo
+        with:
+          command: help
+          connection-string: "postgres://user:pass@localhost/db"
+          migrations-directory: ./migrations
+          verbose: true

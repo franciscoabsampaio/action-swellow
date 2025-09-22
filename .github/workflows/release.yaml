@@ -1,0 +1,42 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - release
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Get current version
+        id: version
+        shell: bash
+        run: |
+          # Read version from VERSION file
+          if [ ! -f VERSION ]; then
+            echo "ERROR: VERSION file is missing!"
+            exit 1
+          fi
+          ver=$(cat VERSION)
+          echo "version=$ver" >> $GITHUB_OUTPUT
+
+      - name: Create Git tag
+        id: tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "v${{ steps.version.outputs.version }}" -m "Release v${{ steps.version.outputs.version }}"
+          git push origin "v${{ steps.version.outputs.version }}"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          name: "Release v${{ steps.version.outputs.version }}"
+          tag_name: "v${{ steps.version.outputs.version }}"
+          body: "Automatic release from /release branch."
+          draft: false
+          prerelease: false
