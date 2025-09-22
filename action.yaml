@@ -41,10 +41,9 @@ runs:
         set -euo pipefail
         repo="franciscoabsampaio/swellow"
         if [ "${{ inputs.version }}" = "latest" ]; then
-          resolved=$(curl -sI "https://github.com/${repo}/releases/latest" \
-            | tr -d '\r' \
-            | grep -i '^location:' \
-            | sed -E 's#.*/tag/([^/]+)$#\1#')
+          resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
+            | jq -r .tag_name)
+          echo "Resolved version: $resolved"
           echo "version=$resolved" >> $GITHUB_OUTPUT
         else
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
