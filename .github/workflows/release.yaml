@@ -8,6 +8,8 @@ on:
 jobs:
   create-release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # to create tags and releases
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
