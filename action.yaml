@@ -2,6 +2,10 @@ name: "Run Swellow CLI"
 description: "Run the Swellow CLI seamlessly in your GitHub Actions workflow."
 author: "Francisco A. B. Sampaio"
 
+branding:
+  icon: "database"
+  color: "blue"
+
 inputs:
   command:
     description: "Swellow command to execute (e.g., up, down)"
@@ -36,10 +40,17 @@ runs:
       run: |
         set -euo pipefail
         repo="franciscoabsampaio/swellow"
+        # Get the version from the latest branch
         if [ "${{ inputs.version }}" = "latest" ]; then
-          resolved=$(curl -sI https://github.com/${repo}/releases/latest \
-            | grep -i location: \
-            | sed -E 's/.*tag\/([^ ]+).*/\1/')
+          resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
+            | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+          # Fail if the resolved version is null
+          if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
+            echo "❌ Could not resolve latest release"
+            exit 1
+          fi
+          echo "Resolved version: $resolved"
           echo "version=$resolved" >> $GITHUB_OUTPUT
         else
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
@@ -79,7 +90,7 @@ runs:
         ext="${{ steps.platform.outputs.ext }}"
         repo="franciscoabsampaio/swellow"
 
-        asset="swellow-${version}-${target}.${ext}"
+        asset="release-binary-${target}.${ext}"
         url="https://github.com/${repo}/releases/download/${version}/${asset}"
 
         echo "Downloading $url"
@@ -97,7 +108,7 @@ runs:
 
         chmod +x swellow* || true
 
-    - name: Run binary
+    - name: Run Swellow Command
       shell: bash
       run: |
         ./swellow \
