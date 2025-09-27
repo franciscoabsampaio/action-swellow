@@ -40,19 +40,17 @@ runs:
       run: |
         set -euo pipefail
         repo="franciscoabsampaio/swellow"
-        # Get the version from the latest branch
-        if [ "${{ inputs.version }}" = "latest" ]; then
-          resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
-            | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-
-          # Fail if the resolved version is null
-          if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
-            echo "❌ Could not resolve latest release"
+        if [[ "${{ inputs.version }}" == "latest" ]]; then
+          # Use curl and a simple grep/sed to parse the latest tag from the GitHub API
+          resolved_version=$(curl -fsSL "https://api.github.com/repos/${repo}/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+          if [[ -z "$resolved_version" ]]; then
+            echo "::error::Could not resolve the latest release version for ${repo}."
             exit 1
           fi
-          echo "Resolved version: $resolved"
-          echo "version=$resolved" >> $GITHUB_OUTPUT
+          echo "Resolved latest version to ${resolved_version}"
+          echo "version=${resolved_version}" >> $GITHUB_OUTPUT
         else
+          echo "Using specified version: ${{ inputs.version }}"
           echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
         fi
 
@@ -78,41 +76,45 @@ runs:
             exit 1
             ;;
         esac
-        echo "target=$target" >> $GITHUB_OUTPUT
-        echo "ext=$ext" >> $GITHUB_OUTPUT
 
-    - name: Download release asset
+        asset_filename="release-binary-${target}.${ext}"
+        echo "Asset Filename: ${asset_filename}"
+        echo "Executable Name: ${executable_name}"
+        
+        echo "filename=${asset_filename}" >> $GITHUB_OUTPUT
+        echo "executable=${executable_name}" >> $GITHUB_OUTPUT
+
+    - name: Download and Extract Swellow
+      uses: robinraju/release-downloader@v1.9
+      with:
+        repository: "franciscoabsampaio/swellow"
+        tag: "${{ steps.resolve_version.outputs.version }}"
+        fileName: "${{ steps.asset.outputs.filename }}"
+        extract: true # This action handles .zip and .tar.gz automatically
+
+    - name: Make Binary Executable
+      if: runner.os != 'Windows'
+      shell: bash
+      run: chmod +x ./${{ steps.asset.outputs.executable }}
+
+    - name: Run Swellow Command
       shell: bash
       run: |
-        set -euo pipefail
-        version="${{ steps.resolve_version.outputs.version }}"
-        target="${{ steps.platform.outputs.target }}"
-        ext="${{ steps.platform.outputs.ext }}"
-        repo="franciscoabsampaio/swellow"
+        # Construct the arguments array
+        CLI_ARGS=(
+          --db "${{ inputs.connection-string }}"
+          --dir "${{ inputs.migrations-directory }}"
+        )
 
-        asset="release-binary-${target}.${ext}"
-        url="https://github.com/${repo}/releases/download/${version}/${asset}"
-
-        echo "Downloading $url"
-        curl -L "$url" -o "swellow.${ext}"
-
-    - name: Extract binary
-      shell: bash
-      run: |
-        ext="${{ steps.platform.outputs.ext }}"
-        if [ "$ext" = "zip" ]; then
-          unzip -o swellow.zip
-        else
-          tar -xzf swellow.tar.gz
+        # Add verbose flag only if it's true
+        if [[ "${{ inputs.verbose }}" == "true" ]]; then
+          CLI_ARGS+=("-v")
         fi
-
-        chmod +x swellow* || true
-
-    - name: Run binary
-      shell: bash
-      run: |
-        ./swellow \
-          --db ${{ inputs.connection-string }} \
-          --dir ${{ inputs.migrations-directory }} \
-          $([[ "${{ inputs.verbose }}" == "true" ]] && echo "-v" || echo "") \
-          ${{ inputs.command }}
+        
+        # Add the main command and any extra arguments
+        CLI_ARGS+=("${{ inputs.command }}")
+        CLI_ARGS+=(${{ inputs.args }})
+        
+        # Execute the command
+        echo "Running: ./${{ steps.asset.outputs.executable }} ${CLI_ARGS[@]}"
+        ./${{ steps.asset.outputs.executable }} "${CLI_ARGS[@]}"
