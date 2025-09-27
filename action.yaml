@@ -83,7 +83,7 @@ runs:
         ext="${{ steps.platform.outputs.ext }}"
         repo="franciscoabsampaio/swellow"
 
-        asset="swellow-${version}-${target}.${ext}"
+        asset="release-binary-${target}.${ext}"
         url="https://github.com/${repo}/releases/download/${version}/${asset}"
 
         echo "Downloading $url"
