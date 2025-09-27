@@ -43,6 +43,10 @@ runs:
         if [ "${{ inputs.version }}" = "latest" ]; then
           resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
             | jq -r .tag_name)
+          if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
+            echo "❌ Could not resolve latest release"
+            exit 1
+          fi
           echo "Resolved version: $resolved"
           echo "version=$resolved" >> $GITHUB_OUTPUT
         else
