@@ -19,6 +19,10 @@ inputs:
     description: "Directory containing migration files"
     required: false
     default: "./migrations"
+  engine:
+    description: "Database engine (e.g., postgres, spark-delta)"
+    required: false
+    default: "postgres"
   args:
     description: "Additional arguments to pass to the Swellow command"
     required: false
@@ -114,5 +118,6 @@ runs:
         ./swellow \
           --db ${{ inputs.connection-string }} \
           --dir ${{ inputs.migrations-directory }} \
+          --engine ${{ inputs.engine }} \
           $([[ "${{ inputs.verbose }}" == "true" ]] && echo "-v" || echo "") \
           ${{ inputs.command }}

@@ -4,7 +4,7 @@
 [![GitHub release](https://img.shields.io/github/v/release/franciscoabsampaio/action-swellow)](https://github.com/franciscoabsampaio/action-swellow/releases/latest)
 [![License](https://img.shields.io/github/license/franciscoabsampaio/action-swellow)](./LICENSE)
 
-Easily run the [Swellow CLI](https://github.com/franciscoabsampaio/swellow) inside your GitHub Actions workflows.
+Easily run the [`swellow` CLI](https://github.com/franciscoabsampaio/swellow) inside your GitHub Actions workflows.
 This action automatically downloads the correct binary for your platform, extracts it, and executes your desired command with minimal setup.
 
 ## Features
@@ -25,12 +25,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run Swellow migrations
+      - name: Run swellow migrations
         uses: franciscoabsampaio/swellow-action@v1
         with:
           command: up
           connection-string: ${{ secrets.DATABASE_URL }}
           migrations-directory: ./migrations
+          engine: spark-iceberg
           verbose: true
 ```
 
@@ -40,10 +41,11 @@ jobs:
 
 | Name                   | Required | Default        | Description                                              |
 | ---------------------- | -------- | -------------- | -------------------------------------------------------- |
-| `command`              | ✅        | `up`           | Swellow command to execute (`up`, `down`, etc.)          |
+| `command`              | ✅        | `up`           | `swellow` command to execute (`up`, `down`, etc.)          |
 | `connection-string`    | ✅        | `""`           | Database connection string                               |
 | `migrations-directory` | ❌        | `./migrations` | Directory containing migration files                     |
-| `args`                 | ❌        | `""`           | Additional arguments to pass to Swellow                  |
+| `engine`               | ❌        | `default`      | Database engine that `swellow` will use                     |
+| `args`                 | ❌        | `""`           | Additional arguments to pass to `swellow`                  |
 | `version`              | ✅        | `latest`       | CLI version to download (GitHub release tag (`vX.Y.Z`) or `latest`) |
 | `verbose`              | ❌        | `false`        | Enable verbose output                                    |
 
