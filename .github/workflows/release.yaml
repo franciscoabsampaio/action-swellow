@@ -55,3 +55,4 @@ jobs:
           body: "Automatic release from /release branch."
           draft: false
           prerelease: false
+          make_latest: true
