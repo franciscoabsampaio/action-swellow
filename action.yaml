@@ -47,7 +47,9 @@ runs:
         # Get the version from the latest branch
         if [ "${{ inputs.version }}" = "latest" ]; then
           resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
-            | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+            | grep '"tag_name":' \
+            | head -n1 \
+            | awk -F'"' '{print $4}')
 
           # Fail if the resolved version is null
           if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
