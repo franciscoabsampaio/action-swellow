@@ -42,25 +42,24 @@ runs:
       id: resolve_version
       shell: bash
       run: |
-        set -euo pipefail
-        repo="franciscoabsampaio/swellow"
-        # Get the version from the latest branch
-        if [ "${{ inputs.version }}" = "latest" ]; then
-          resolved=$(curl -s "https://api.github.com/repos/${repo}/releases/latest" \
-            | grep '"tag_name":' \
-            | head -n1 \
-            | awk -F'"' '{print $4}')
+        set -euxo pipefail  # +x enables command trace
 
-          # Fail if the resolved version is null
-          if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
-            echo "❌ Could not resolve latest release"
-            exit 1
-          fi
-          echo "Resolved version: $resolved"
-          echo "version=$resolved" >> $GITHUB_OUTPUT
-        else
-          echo "version=${{ inputs.version }}" >> $GITHUB_OUTPUT
+        repo="franciscoabsampaio/swellow"
+        echo "Repo: $repo"
+
+        version_output=$(curl -v -s "https://api.github.com/repos/${repo}/releases/latest")
+        echo "Raw output from GitHub API:"
+        echo "$version_output"
+
+        resolved=$(echo "$version_output" | grep '"tag_name":' | head -n1 | awk -F'"' '{print $4}')
+        echo "Resolved tag: $resolved"
+
+        if [ -z "$resolved" ] || [ "$resolved" = "null" ]; then
+          echo "❌ Could not resolve latest release"
+          exit 1
         fi
+
+        echo "version=$resolved" >> $GITHUB_OUTPUT
 
     - name: Determine platform
       id: platform
