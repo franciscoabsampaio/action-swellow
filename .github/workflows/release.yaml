@@ -39,11 +39,20 @@ jobs:
         run: |
           version="${{ steps.version.outputs.version }}"
           moving_tag="${{ steps.version.outputs.moving_tag }}"
+          
+          if [ -z "$moving_tag" ]; then
+            echo "❌ moving_tag is empty! Aborting."
+            exit 1
+          fi
+
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Create release tag
           git tag -a "$version" -m "Release $version"
           git push origin "$version"
-          # Update moving tag
+
+          # Update moving tag only if defined
           git tag -f "$moving_tag"
           git push origin "$moving_tag" --force
 
